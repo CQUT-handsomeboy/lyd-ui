@@ -53,12 +53,6 @@ def main(page: ft.Page):
             columns.append(rect)
         rows.append(ft.Row(columns))
 
-    options = [
-        ft.dropdown.Option("Option 1"),
-        ft.dropdown.Option("Option 2"),
-        ft.dropdown.Option("Option 3"),
-    ]
-
     def on_dropdown_changed(e):
         nonlocal sensor
         sensor = Sensor(dropdown.value, callback=set_cells)
