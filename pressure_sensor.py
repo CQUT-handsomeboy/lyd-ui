@@ -2,17 +2,20 @@ import serial
 import time
 from threading import Thread
 from icecream import ic
+from threading import Event
 
 class Sensor:
-    def __init__(self,ser_id:str,callback) -> None:
+    def __init__(self,ser_id:str,callback,gap:float=0.05) -> None:
 
         self.ser = serial.Serial(
             port=ser_id, # 根据实际情况修改串口号
             baudrate=115200,  # 与Arduino代码中相同的波特率
             timeout=1,  # 读取超时时间1秒
         )
+        self.gap = gap
         self.callback = callback
         assert self.ser.is_open,"串口未打开"
+        self._stop = Event()
         self._thread = Thread(target=self.handle,daemon=True)
         self._thread.start()
         
@@ -38,9 +41,9 @@ class Sensor:
         return result
     
     def handle(self):
-        while True:
+        while not self._stop.is_set():
             if not self.ser.in_waiting:
-                time.sleep(0.05)
+                time.sleep(self.gap)
                 continue
 
             data = self.ser.read(35)
@@ -54,3 +57,9 @@ class Sensor:
                 self.callback(parsed_data)
             except ValueError:
                 continue
+    
+    def __del__(self):
+        self._stop.set()
+        if self.ser.is_open:
+            self.ser.close()
+        
